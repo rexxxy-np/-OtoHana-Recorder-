@@ -526,15 +526,15 @@ footer {
 
   <!-- Download Buttons -->
   <button class="btn-download" id="btnDownload" onclick="downloadWebM()">
-    ⬇ Download WebM
+    ⬇ Download Recording
   </button>
 
   <button class="btn-download-mp4" id="btnDownloadMp4" onclick="downloadMp4()">
-    ⬇ Export as MP4
+    ⬇ Download as MP4
   </button>
 
-  <!-- MP4 Conversion Progress -->
-  <div class="convert-progress" id="convertProgress">
+  <!-- MP4 Conversion Progress (legacy) -->
+  <div class="convert-progress" id="convertProgress" style="display:none!important">
     <div class="progress-label">
       <span id="progressLabel">Converting to MP4…</span>
       <span id="progressPct">0%</span>
@@ -621,7 +621,7 @@ footer {
 
   <!-- Info -->
   <div class="info-box">
-    <strong>Note:</strong> Chrome will ask permission to share your screen when you tap Start Recording. Watermarks are <strong>burned into the video</strong> via canvas compositing. MP4 export uses FFmpeg — the first export may take a moment to load. Works best on desktop Chrome.
+    <strong>Note:</strong> Chrome will ask permission to share your screen when you tap Start Recording. Watermarks are <strong>burned into the video</strong> via canvas compositing. On Chrome 130+, recordings are saved <strong>natively as MP4</strong>. On older browsers, WebM is used instead. Works best on desktop Chrome.
   </div>
 
   <footer>OtoHana Recorder v2.0 · Works in Chrome · No install needed 🌸</footer>
@@ -647,7 +647,7 @@ let compositeCtx   = null;
 let compositeRaf   = null;
 let sourceVideo    = null; // raw screen video element (hidden)
 
-// (FFmpeg removed — using WebCodecs + mp4-muxer instead)
+
 
 // ── UI refs ────────────────────────────────────────────────────────────────
 const btnRecord       = document.getElementById('btnRecord');
@@ -853,8 +853,18 @@ async function startRecording() {
 
     mediaRecorder.onstop = () => {
       lastBlob = new Blob(recordedChunks, { type: mimeType });
-      btnDownload.classList.add('visible');
-      btnDownloadMp4.classList.add('visible');
+      if (isNativeMp4(mimeType)) {
+        // Native MP4 — single download button, labeled MP4
+        btnDownload.textContent = '⬇ Download MP4';
+        btnDownload.classList.add('visible');
+        showToast('✅ Recorded natively as MP4!', true);
+      } else {
+        // WebM fallback — show both buttons
+        btnDownload.textContent = '⬇ Download WebM';
+        btnDownload.classList.add('visible');
+        btnDownloadMp4.classList.add('visible');
+        showToast('ℹ️ Recorded as WebM (MP4 not supported on this browser)');
+      }
       setIdle();
     };
 
@@ -895,162 +905,30 @@ function stopRecording() {
   placeholder.style.display = 'flex';
 }
 
-// ── WebM Download ──────────────────────────────────────────────────────────
+// ── Primary Download (WebM or native MP4) ────────────────────────────────
 function downloadWebM() {
   if (!lastBlob) return;
-  const ext = lastBlob.type.includes('mp4') ? 'mp4' : 'webm';
+  const ext = isNativeMp4(lastBlob.type) ? 'mp4' : 'webm';
   triggerDownload(lastBlob, ext);
 }
 
-// ── MP4 Export via WebCodecs + mp4-muxer ──────────────────────────────────
-// Pure JS — no FFmpeg, no SharedArrayBuffer, no Web Workers, no special headers.
-// Works on GitHub Pages and any static host.
+// ── MP4 Export (WebM → MP4 rename fallback — only shown if native MP4 unavailable) ──
 async function downloadMp4() {
   if (!lastBlob) return;
-
-  btnDownloadMp4.disabled = true;
-  convertProgress.classList.add('visible');
-  progressLabel.textContent = 'Loading muxer…';
-  setProgress(0);
-
-  try {
-    await loadScript('https://cdn.jsdelivr.net/npm/mp4-muxer@4.4.5/build/mp4-muxer.min.js');
-
-    progressLabel.textContent = 'Reading video…';
-    setProgress(3);
-
-    const mp4Buffer = await remuxToMp4(lastBlob, (pct) => {
-      setProgress(3 + Math.round(pct * 94));
-      progressLabel.textContent = `Encoding… ${3 + Math.round(pct * 94)}%`;
-    });
-
-    setProgress(99);
-    progressLabel.textContent = 'Finalising…';
-
-    const mp4Blob = new Blob([mp4Buffer], { type: 'video/mp4' });
-    setProgress(100);
-    progressLabel.textContent = 'Done!';
-
-    triggerDownload(mp4Blob, 'mp4');
-    showToast('✅ MP4 exported!', true);
-
-    setTimeout(() => {
-      convertProgress.classList.remove('visible');
-      setProgress(0);
-      progressLabel.textContent = 'Converting to MP4…';
-    }, 2000);
-
-  } catch(err) {
-    showToast('MP4 export failed: ' + err.message);
-    console.error(err);
-    convertProgress.classList.remove('visible');
+  // If browser already recorded native MP4, just download it
+  if (isNativeMp4(lastBlob.type)) {
+    triggerDownload(lastBlob, 'mp4');
+    return;
   }
-
-  btnDownloadMp4.disabled = false;
-}
-
-// ── remuxToMp4: decode WebM frames → VideoEncoder → mp4-muxer ────────────
-async function remuxToMp4(blob, onProgress) {
-  const { Muxer, ArrayBufferTarget } = Mp4Muxer;
-
-  // Get video metadata
-  const blobUrl = URL.createObjectURL(blob);
-  const { vw, vh, duration } = await new Promise((res, rej) => {
-    const v = Object.assign(document.createElement('video'), {
-      preload: 'metadata', muted: true, src: blobUrl
-    });
-    v.onloadedmetadata = () => res({ vw: v.videoWidth, vh: v.videoHeight, duration: v.duration });
-    v.onerror = rej;
-  });
-
-  const FPS         = 30;
-  const totalFrames = Math.ceil(duration * FPS);
-
-  // Set up muxer
-  const target = new ArrayBufferTarget();
-  const muxer  = new Muxer({
-    target,
-    video: { codec: 'avc', width: vw, height: vh },
-    fastStart: 'in-memory'
-  });
-
-  // Set up encoder
-  let framesDone = 0;
-  const encoder = new VideoEncoder({
-    output: (chunk, meta) => { muxer.addVideoChunk(chunk, meta); },
-    error:  (e) => { throw e; }
-  });
-  encoder.configure({
-    codec:       'avc1.42001f',
-    width:        vw,
-    height:       vh,
-    bitrate:      6_000_000,
-    framerate:    FPS,
-    latencyMode: 'quality'
-  });
-
-  // Seek-and-capture loop
-  const vid = Object.assign(document.createElement('video'), {
-    muted: true, preload: 'auto', src: blobUrl
-  });
-  // Wait for enough data
-  await new Promise(r => { vid.oncanplay = r; vid.load(); });
-
-  const offscreen = new OffscreenCanvas(vw, vh);
-  const ctx       = offscreen.getContext('2d');
-
-  for (let i = 0; i < totalFrames; i++) {
-    const t = i / FPS;
-    if (t >= duration) break;
-
-    await seekTo(vid, t);
-    ctx.drawImage(vid, 0, 0, vw, vh);
-
-    const bmp   = await createImageBitmap(offscreen);
-    const frame = new VideoFrame(bmp, {
-      timestamp: Math.round(t * 1e6),
-      duration:  Math.round(1e6 / FPS)
-    });
-    encoder.encode(frame, { keyFrame: i % (FPS * 2) === 0 });
-    frame.close();
-    bmp.close();
-
-    framesDone++;
-    onProgress && onProgress(framesDone / totalFrames);
-
-    // Yield to browser every 10 frames to stay responsive
-    if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
-  }
-
-  await encoder.flush();
-  muxer.finalize();
-  URL.revokeObjectURL(blobUrl);
-  vid.src = '';
-
-  return target.buffer;
-}
-
-function seekTo(video, time) {
-  return new Promise(resolve => {
-    if (Math.abs(video.currentTime - time) < 0.001) { resolve(); return; }
-    video.addEventListener('seeked', resolve, { once: true });
-    video.currentTime = time;
-  });
-}
-
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-    const s = Object.assign(document.createElement('script'), { src });
-    s.onload  = resolve;
-    s.onerror = () => reject(new Error('Failed to load: ' + src));
-    document.head.appendChild(s);
-  });
+  // Otherwise offer the WebM with an .mp4 extension as best-effort
+  // (many players accept WebM in an .mp4 container)
+  showToast('⚠️ Native MP4 not supported — downloading WebM instead');
+  triggerDownload(lastBlob, 'webm');
 }
 
 function setProgress(pct) {
-  progressBar.style.width = pct + '%';
-  progressPct.textContent = pct + '%';
+  if (progressBar) progressBar.style.width = pct + '%';
+  if (progressPct) progressPct.textContent = pct + '%';
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -1065,6 +943,9 @@ function triggerDownload(blob, ext) {
 
 function getSupportedMimeType() {
   const types = [
+    'video/mp4;codecs=avc1,mp4a.40.2',  // H.264 + AAC — native MP4 (Chrome 130+)
+    'video/mp4;codecs=avc1',
+    'video/mp4',
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
     'video/webm'
@@ -1073,6 +954,10 @@ function getSupportedMimeType() {
     if (MediaRecorder.isTypeSupported(t)) return t;
   }
   return 'video/webm';
+}
+
+function isNativeMp4(mimeType) {
+  return mimeType && mimeType.startsWith('video/mp4');
 }
 
 function setRecording() {
