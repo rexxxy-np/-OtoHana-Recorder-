@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OtoHana Recorder 🌸</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --pink: #FF6B9D;
+  --pink2: #FF3D7F;
+  --dark: #090910;
+  --card: #111118;
+  --card2: #1a1a25;
+  --border: #252535;
+  --text: #F0F0FA;
+  --muted: #606080;
+  --green: #4FFFB0;
+  --red: #FF4455;
+  --yellow: #FFD166;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--dark);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, #FF6B9D08 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, #FF3D7F06 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Header ── */
+header {
+  padding: 40px 0 28px;
+  text-align: center;
+}
+
+.logo-ring {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #FF6B9D33, #1a0010);
+  border: 1.5px solid #FF6B9D44;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  margin: 0 auto 16px;
+  animation: breathe 4s ease-in-out infinite;
+  box-shadow: 0 0 30px #FF6B9D22;
+}
+
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 20px #FF6B9D22; transform: scale(1); }
+  50% { box-shadow: 0 0 50px #FF6B9D44; transform: scale(1.05); }
+}
+
+.logo-ring.recording {
+  animation: pulse-rec 1s ease-in-out infinite;
+  border-color: #FF4455;
+  box-shadow: 0 0 40px #FF445566;
+}
+
+@keyframes pulse-rec {
+  0%, 100% { box-shadow: 0 0 20px #FF445533; }
+  50% { box-shadow: 0 0 60px #FF445588; }
+}
+
+h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+h1 span { color: var(--pink); }
+.subtitle { color: var(--muted); font-size: 12px; font-family: 'DM Mono', monospace; margin-top: 4px; letter-spacing: 0.05em; }
+
+/* ── Timer ── */
+.timer-wrap {
+  text-align: center;
+  margin: 24px 0;
+}
+
+#timer {
+  font-family: 'DM Mono', monospace;
+  font-size: 56px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.05em;
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+#timer.recording { color: var(--pink); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+  margin-top: 10px;
+  transition: all 0.3s;
+}
+
+.status-badge.recording {
+  background: #FF445511;
+  border-color: #FF445544;
+  color: var(--red);
+}
+
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background 0.3s;
+}
+
+.status-badge.recording .status-dot {
+  background: var(--red);
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+/* ── Record Button ── */
+.btn-record {
+  width: 100%;
+  height: 68px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--pink), var(--pink2));
+  color: white;
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  margin: 8px 0 24px;
+  transition: all 0.2s;
+  box-shadow: 0 8px 30px #FF6B9D33;
+  letter-spacing: 0.02em;
+}
+
+.btn-record:hover { transform: translateY(-2px); box-shadow: 0 12px 40px #FF6B9D44; }
+.btn-record:active { transform: translateY(0); }
+
+.btn-record.recording {
+  background: linear-gradient(135deg, #FF4455, #CC2233);
+  box-shadow: 0 8px 30px #FF445533;
+}
+
+/* ── Section label ── */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--pink);
+  text-transform: uppercase;
+  margin: 20px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.card-value {
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* ── Select ── */
+select {
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+select:focus { border-color: var(--pink); }
+
+.select-wrap { position: relative; }
+.select-wrap::after {
+  content: '▾';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+  font-size: 12px;
+}
+
+/* ── Toggle switch ── */
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle input { opacity: 0; width: 0; height: 0; }
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  left: 3px; top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+input:checked + .toggle-slider { background: var(--pink); }
+input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+/* ── Text input ── */
+input[type="text"] {
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+input[type="text"]:focus { border-color: var(--pink); }
+input[type="text"]::placeholder { color: var(--muted); }
+
+/* ── Lock badge ── */
+.lock-badge {
+  font-size: 10px;
+  background: #FFD16611;
+  color: var(--yellow);
+  border: 1px solid #FFD16633;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── Preview area ── */
+.preview-wrap {
+  position: relative;
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+  aspect-ratio: 16/9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: none;
+}
+
+.preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.preview-placeholder .icon { font-size: 32px; opacity: 0.4; }
+
+/* Watermark overlay on preview */
+.wm-overlay {
+  position: absolute;
+  pointer-events: none;
+}
+
+.wm-text {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  color: rgba(255,255,255,0.7);
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.wm-logo {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  color: var(--pink);
+  font-size: 11px;
+  font-family: 'Syne', monospace;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+/* ── Download buttons ── */
+.btn-download {
+  width: 100%;
+  height: 52px;
+  border: 1.5px solid var(--pink);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--pink);
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: none;
+  margin-bottom: 8px;
+}
+
+.btn-download:hover { background: #FF6B9D11; }
+.btn-download.visible { display: block; }
+
+.btn-download-mp4 {
+  width: 100%;
+  height: 52px;
+  border: 1.5px solid var(--green);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--green);
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: none;
+  margin-bottom: 8px;
+}
+
+.btn-download-mp4:hover { background: #4FFFB011; }
+.btn-download-mp4.visible { display: block; }
+.btn-download-mp4:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Progress bar (MP4 conversion) ── */
+.convert-progress {
+  display: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.convert-progress.visible { display: block; }
+
+.progress-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.progress-bar-outer {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), #00FFB2);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.3s;
+}
+
+/* ── Info box ── */
+.info-box {
+  background: #FF6B9D0A;
+  border: 1px solid #FF6B9D22;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.info-box strong { color: var(--pink); }
+
+/* ── Footer ── */
+footer {
+  text-align: center;
+  padding-top: 24px;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  opacity: 0.5;
+}
+
+/* ── Error toast ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #FF4455;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  transition: transform 0.3s;
+  z-index: 999;
+  white-space: nowrap;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.toast.green { background: #1a3a2a; border: 1px solid var(--green); color: var(--green); }
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hidden canvas used for watermark compositing */
+#compositeCanvas { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="fade-in">
+    <div class="logo-ring" id="logoRing">🌸</div>
+    <h1>OtoHana <span>Recorder</span></h1>
+    <p class="subtitle">Screen · Audio · Watermark · 1080p</p>
+  </header>
+
+  <!-- Timer -->
+  <div class="timer-wrap fade-in">
+    <div id="timer">00:00:00</div>
+    <div class="status-badge" id="statusBadge">
+      <div class="status-dot"></div>
+      <span id="statusText">Ready to record</span>
+    </div>
+  </div>
+
+  <!-- Record Button -->
+  <button class="btn-record fade-in" id="btnRecord" onclick="toggleRecording()">
+    ⏺ Start Recording
+  </button>
+
+  <!-- Download Buttons -->
+  <button class="btn-download" id="btnDownload" onclick="downloadWebM()">
+    ⬇ Download WebM
+  </button>
+
+  <button class="btn-download-mp4" id="btnDownloadMp4" onclick="downloadMp4()">
+    ⬇ Export as MP4
+  </button>
+
+  <!-- MP4 Conversion Progress -->
+  <div class="convert-progress" id="convertProgress">
+    <div class="progress-label">
+      <span id="progressLabel">Converting to MP4…</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar-outer">
+      <div class="progress-bar-inner" id="progressBar"></div>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="section-label">Preview</div>
+  <div class="preview-wrap">
+    <div class="preview-placeholder" id="previewPlaceholder">
+      <div class="icon">📹</div>
+      <span>Screen preview appears here</span>
+    </div>
+    <video id="preview" autoplay muted playsinline></video>
+    <div class="wm-text" id="wmTextOverlay"></div>
+    <div class="wm-logo">🌸 OtoHana</div>
+  </div>
+
+  <!-- Hidden canvas for watermark compositing -->
+  <canvas id="compositeCanvas"></canvas>
+
+  <!-- Settings -->
+  <div class="section-label">Recording</div>
+
+  <div class="card">
+    <div class="card-label">Video Bitrate</div>
+    <div class="select-wrap">
+      <select id="selBitrate">
+        <option value="2000000">2 Mbps — Good</option>
+        <option value="4000000">4 Mbps — Very Good</option>
+        <option value="8000000" selected>8 Mbps — Excellent ✅</option>
+        <option value="16000000">16 Mbps — Maximum</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Audio Mode</div>
+    <div class="select-wrap">
+      <select id="selAudio">
+        <option value="system">System Audio Only</option>
+        <option value="mic">Microphone Only</option>
+        <option value="both" selected>System + Microphone</option>
+        <option value="none">No Audio</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Resolution</div>
+    <div class="card-row">
+      <span class="card-value">1920 × 1080 (1080p)</span>
+      <span style="color:var(--muted);font-size:11px;font-family:'DM Mono',monospace">60fps</span>
+    </div>
+  </div>
+
+  <!-- Watermark -->
+  <div class="section-label">Watermark</div>
+
+  <div class="card">
+    <div class="card-row" style="margin-bottom:12px">
+      <span class="card-value">Show Watermark</span>
+      <label class="toggle">
+        <input type="checkbox" id="toggleWatermark" checked onchange="updateWatermark()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="card-label">Custom Text</div>
+    <input type="text" id="watermarkText" value="OtoHana" placeholder="Your watermark text" oninput="updateWatermark()" maxlength="40"/>
+  </div>
+
+  <div class="card">
+    <div class="card-row">
+      <div>
+        <div class="card-value">🌸 OtoHana Logo</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Always burned into recording — top right</div>
+      </div>
+      <span class="lock-badge">🔒 Locked</span>
+    </div>
+  </div>
+
+  <!-- Info -->
+  <div class="info-box">
+    <strong>Note:</strong> Chrome will ask permission to share your screen when you tap Start Recording. Watermarks are <strong>burned into the video</strong> via canvas compositing. MP4 export uses FFmpeg — the first export may take a moment to load. Works best on desktop Chrome.
+  </div>
+
+  <footer>OtoHana Recorder v2.0 · Works in Chrome · No install needed 🌸</footer>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- FFmpeg.wasm (loaded on demand) -->
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let mediaRecorder = null;
+let recordedChunks = [];
+let timerInterval  = null;
+let startTime      = 0;
+let stream         = null;
+let lastBlob       = null;
+let lastMimeType   = '';
+
+// Canvas compositing state
+let compositeCtx   = null;
+let compositeRaf   = null;
+let sourceVideo    = null; // raw screen video element (hidden)
+
+// FFmpeg state
+let ffmpegLoaded   = false;
+let ffmpegLoading  = false;
+let ffmpegInstance = null;
+
+// ── UI refs ────────────────────────────────────────────────────────────────
+const btnRecord       = document.getElementById('btnRecord');
+const btnDownload     = document.getElementById('btnDownload');
+const btnDownloadMp4  = document.getElementById('btnDownloadMp4');
+const timerEl         = document.getElementById('timer');
+const statusBadge     = document.getElementById('statusBadge');
+const statusText      = document.getElementById('statusText');
+const logoRing        = document.getElementById('logoRing');
+const preview         = document.getElementById('preview');
+const placeholder     = document.getElementById('previewPlaceholder');
+const wmTextEl        = document.getElementById('wmTextOverlay');
+const canvas          = document.getElementById('compositeCanvas');
+const convertProgress = document.getElementById('convertProgress');
+const progressBar     = document.getElementById('progressBar');
+const progressPct     = document.getElementById('progressPct');
+const progressLabel   = document.getElementById('progressLabel');
+
+// ── Watermark ─────────────────────────────────────────────────────────────
+function updateWatermark() {
+  const enabled = document.getElementById('toggleWatermark').checked;
+  const text    = document.getElementById('watermarkText').value;
+  wmTextEl.textContent = enabled && text ? text : '';
+}
+updateWatermark();
+
+// ── Timer ─────────────────────────────────────────────────────────────────
+function formatTime(ms) {
+  const s   = Math.floor(ms / 1000);
+  const h   = Math.floor(s / 3600);
+  const m   = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function startTimer() {
+  startTime    = Date.now();
+  timerInterval = setInterval(() => {
+    timerEl.textContent = formatTime(Date.now() - startTime);
+  }, 500);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+// ── Canvas watermark compositing ──────────────────────────────────────────
+// Instead of recording the raw screen stream, we draw each frame onto a
+// canvas with the watermarks painted on top, then record the canvas stream.
+// This way the watermarks are truly burned into the video file.
+
+function startCompositing(videoEl, w, h) {
+  canvas.width  = w;
+  canvas.height = h;
+  compositeCtx  = canvas.getContext('2d');
+
+  function drawFrame() {
+    if (!compositeCtx) return;
+
+    compositeCtx.drawImage(videoEl, 0, 0, w, h);
+
+    // ── OtoHana logo watermark (always on — top right) ──
+    const logoText  = '🌸 OtoHana';
+    const logoSize  = Math.max(16, Math.round(h * 0.022));
+    compositeCtx.font         = `700 ${logoSize}px 'Syne', sans-serif`;
+    compositeCtx.textBaseline = 'top';
+    compositeCtx.textAlign    = 'right';
+
+    // Shadow for readability
+    compositeCtx.shadowColor   = 'rgba(0,0,0,0.85)';
+    compositeCtx.shadowBlur    = 6;
+    compositeCtx.shadowOffsetX = 1;
+    compositeCtx.shadowOffsetY = 1;
+    compositeCtx.fillStyle     = '#FF6B9D';
+    compositeCtx.fillText(logoText, w - Math.round(w * 0.012) - 4, Math.round(h * 0.015));
+
+    // ── Custom text watermark (bottom left, if enabled) ──
+    const wmEnabled = document.getElementById('toggleWatermark').checked;
+    const wmText    = document.getElementById('watermarkText').value;
+    if (wmEnabled && wmText) {
+      const wmSize = Math.max(13, Math.round(h * 0.018));
+      compositeCtx.font         = `400 ${wmSize}px 'DM Mono', monospace`;
+      compositeCtx.textBaseline = 'bottom';
+      compositeCtx.textAlign    = 'left';
+      compositeCtx.shadowColor   = 'rgba(0,0,0,0.9)';
+      compositeCtx.shadowBlur    = 5;
+      compositeCtx.fillStyle     = 'rgba(255,255,255,0.75)';
+      compositeCtx.fillText(wmText, Math.round(w * 0.012), h - Math.round(h * 0.015));
+    }
+
+    // Reset shadow
+    compositeCtx.shadowColor   = 'transparent';
+    compositeCtx.shadowBlur    = 0;
+    compositeCtx.shadowOffsetX = 0;
+    compositeCtx.shadowOffsetY = 0;
+
+    compositeRaf = requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+}
+
+function stopCompositing() {
+  if (compositeRaf) { cancelAnimationFrame(compositeRaf); compositeRaf = null; }
+  compositeCtx = null;
+}
+
+// ── Recording ─────────────────────────────────────────────────────────────
+async function toggleRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    recordedChunks = [];
+    lastBlob       = null;
+    btnDownload.classList.remove('visible');
+    btnDownloadMp4.classList.remove('visible');
+
+    // Get screen stream
+    const displayStream = await navigator.mediaDevices.getDisplayMedia({
+      video: {
+        width:     { ideal: 1920 },
+        height:    { ideal: 1080 },
+        frameRate: { ideal: 60 }
+      },
+      audio: true
+    });
+
+    // Get microphone if needed
+    const audioMode = document.getElementById('selAudio').value;
+    let audioTracks = [];
+
+    if (audioMode !== 'none') {
+      if (audioMode === 'mic' || audioMode === 'both') {
+        try {
+          const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          const ctx       = new AudioContext();
+          const dest      = ctx.createMediaStreamDestination();
+
+          if (audioMode === 'both' && displayStream.getAudioTracks().length > 0) {
+            ctx.createMediaStreamSource(new MediaStream([displayStream.getAudioTracks()[0]])).connect(dest);
+          }
+          ctx.createMediaStreamSource(micStream).connect(dest);
+          audioTracks = dest.stream.getAudioTracks();
+        } catch(e) {
+          showToast('Mic not available — recording without mic');
+          audioTracks = displayStream.getAudioTracks();
+        }
+      } else {
+        // system only
+        audioTracks = displayStream.getAudioTracks();
+      }
+    }
+
+    // ── Set up hidden source video for canvas compositing ──
+    sourceVideo         = document.createElement('video');
+    sourceVideo.srcObject = new MediaStream(displayStream.getVideoTracks());
+    sourceVideo.muted   = true;
+    sourceVideo.autoplay = true;
+    sourceVideo.playsInline = true;
+    await sourceVideo.play();
+
+    // Determine actual capture dimensions
+    const vTrack    = displayStream.getVideoTracks()[0];
+    const settings  = vTrack.getSettings();
+    const capW      = settings.width  || 1920;
+    const capH      = settings.height || 1080;
+
+    // Start compositing watermarks onto canvas
+    startCompositing(sourceVideo, capW, capH);
+
+    // Canvas stream for recording (60fps target)
+    const canvasStream   = canvas.captureStream(60);
+    const recordStream   = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...audioTracks
+    ]);
+
+    // Show preview (preview the canvas output so user sees watermarks live)
+    preview.srcObject      = canvasStream;
+    preview.style.display  = 'block';
+    placeholder.style.display = 'none';
+
+    // Pick best codec for recording (WebM — we'll convert to MP4 separately)
+    const mimeType = getSupportedMimeType();
+    lastMimeType   = mimeType;
+    const bitrate  = parseInt(document.getElementById('selBitrate').value);
+
+    mediaRecorder = new MediaRecorder(recordStream, {
+      mimeType,
+      videoBitsPerSecond: bitrate,
+      audioBitsPerSecond: 192000
+    });
+
+    mediaRecorder.ondataavailable = e => {
+      if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      lastBlob = new Blob(recordedChunks, { type: mimeType });
+      btnDownload.classList.add('visible');
+      btnDownloadMp4.classList.add('visible');
+      setIdle();
+    };
+
+    // Stop if user ends screen share
+    displayStream.getVideoTracks()[0].onended = () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') stopRecording();
+    };
+
+    mediaRecorder.start(1000);
+    setRecording();
+    startTimer();
+
+    stream = displayStream; // keep ref for cleanup
+
+  } catch(err) {
+    if (err.name === 'NotAllowedError') {
+      showToast('Screen share cancelled');
+    } else {
+      showToast('Error: ' + err.message);
+    }
+    setIdle();
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+  }
+  stopCompositing();
+  if (sourceVideo) { sourceVideo.srcObject = null; sourceVideo = null; }
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  stopTimer();
+  preview.srcObject      = null;
+  preview.style.display  = 'none';
+  placeholder.style.display = 'flex';
+}
+
+// ── WebM Download ──────────────────────────────────────────────────────────
+function downloadWebM() {
+  if (!lastBlob) return;
+  const ext = lastBlob.type.includes('mp4') ? 'mp4' : 'webm';
+  triggerDownload(lastBlob, ext);
+}
+
+// ── MP4 Export via FFmpeg.wasm ─────────────────────────────────────────────
+async function downloadMp4() {
+  if (!lastBlob) return;
+
+  btnDownloadMp4.disabled = true;
+  convertProgress.classList.add('visible');
+  progressLabel.textContent = 'Loading FFmpeg…';
+  setProgress(0);
+
+  try {
+    await loadFFmpeg();
+
+    progressLabel.textContent = 'Writing video data…';
+    setProgress(5);
+
+    const { FFmpeg } = ffmpegInstance;
+    const ff = new FFmpeg();
+
+    ff.on('progress', ({ progress }) => {
+      const pct = Math.min(99, Math.round(progress * 100));
+      setProgress(pct);
+      progressLabel.textContent = `Converting… ${pct}%`;
+    });
+
+    await ff.load({
+      coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js'
+    });
+
+    // Write input WebM
+    const inputName  = 'input.webm';
+    const outputName = 'output.mp4';
+
+    const buf = await lastBlob.arrayBuffer();
+    await ff.writeFile(inputName, new Uint8Array(buf));
+
+    progressLabel.textContent = 'Converting to MP4…';
+    setProgress(10);
+
+    // Re-encode to MP4 with H.264 + AAC
+    await ff.exec([
+      '-i', inputName,
+      '-c:v', 'libx264',
+      '-preset', 'fast',
+      '-crf', '18',
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-movflags', '+faststart',
+      outputName
+    ]);
+
+    setProgress(99);
+    progressLabel.textContent = 'Finalising…';
+
+    const data = await ff.readFile(outputName);
+    const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+
+    setProgress(100);
+    progressLabel.textContent = 'Done!';
+
+    triggerDownload(mp4Blob, 'mp4');
+
+    showToast('✅ MP4 exported!', true);
+
+    setTimeout(() => {
+      convertProgress.classList.remove('visible');
+      setProgress(0);
+      progressLabel.textContent = 'Converting to MP4…';
+    }, 2000);
+
+    // Cleanup FFmpeg files
+    try { await ff.deleteFile(inputName); } catch(e) {}
+    try { await ff.deleteFile(outputName); } catch(e) {}
+
+  } catch(err) {
+    showToast('MP4 export failed: ' + err.message);
+    convertProgress.classList.remove('visible');
+  }
+
+  btnDownloadMp4.disabled = false;
+}
+
+async function loadFFmpeg() {
+  if (ffmpegLoaded) return;
+  if (ffmpegLoading) {
+    // wait for it
+    await new Promise(res => {
+      const id = setInterval(() => { if (ffmpegLoaded) { clearInterval(id); res(); } }, 200);
+    });
+    return;
+  }
+  ffmpegLoading = true;
+
+  // Dynamically load @ffmpeg/ffmpeg from CDN
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.type  = 'module';
+    s.textContent = `
+      import { FFmpeg } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
+      window.__ffmpegInstance = { FFmpeg };
+    `;
+    document.head.appendChild(s);
+
+    // Poll until module sets the global
+    const check = setInterval(() => {
+      if (window.__ffmpegInstance) {
+        ffmpegInstance = window.__ffmpegInstance;
+        ffmpegLoaded   = true;
+        ffmpegLoading  = false;
+        clearInterval(check);
+        resolve();
+      }
+    }, 200);
+
+    // Timeout after 30s
+    setTimeout(() => {
+      if (!ffmpegLoaded) {
+        clearInterval(check);
+        ffmpegLoading = false;
+        reject(new Error('FFmpeg failed to load. Check your connection.'));
+      }
+    }, 30000);
+  });
+}
+
+function setProgress(pct) {
+  progressBar.style.width = pct + '%';
+  progressPct.textContent = pct + '%';
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function triggerDownload(blob, ext) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = `OtoHana_${new Date().toISOString().slice(0,19).replace(/[:]/g,'-')}.${ext}`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function getSupportedMimeType() {
+  const types = [
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm'
+  ];
+  for (const t of types) {
+    if (MediaRecorder.isTypeSupported(t)) return t;
+  }
+  return 'video/webm';
+}
+
+function setRecording() {
+  btnRecord.textContent = '⏹ Stop Recording';
+  btnRecord.classList.add('recording');
+  statusBadge.classList.add('recording');
+  statusText.textContent = 'Recording…';
+  timerEl.classList.add('recording');
+  logoRing.classList.add('recording');
+  logoRing.textContent = '⏺';
+}
+
+function setIdle() {
+  btnRecord.textContent = '⏺ Start Recording';
+  btnRecord.classList.remove('recording');
+  statusBadge.classList.remove('recording');
+  statusText.textContent = 'Ready to record';
+  timerEl.classList.remove('recording');
+  logoRing.classList.remove('recording');
+  logoRing.textContent = '🌸';
+}
+
+function showToast(msg, green = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (green ? ' green' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Check browser support
+if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+  showToast('Please use Chrome or Edge for screen recording');
+}
+</script>
+</body>
+</html>
